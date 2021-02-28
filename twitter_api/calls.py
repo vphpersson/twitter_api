@@ -1,4 +1,4 @@
-from typing import Optional, Iterable, Union
+from typing import Optional, Iterable, Union, Any
 from urllib.parse import urljoin, quote, parse_qs, urlparse, urlencode
 
 from httpx import AsyncClient as HTTPXAsyncClient
@@ -188,22 +188,46 @@ async def lookup_users(
     :return: A tuple of user information about the specified users.
     """
 
-    response = await http_client.get(
-        url=urljoin(TWITTER_API_URL, 'users/lookup.json'),
-        params={
-            key: value
-            for key, value in [
-                ('user_id', ','.join(str(user_id) for user_id in (user_ids or []))),
-                ('screen_name', ','.join(screen_names or [])),
-                ('include_entities', include_entities),
-                ('tweet_mode', tweet_mode)
-            ]
-            if value is not None
-        }
-    )
-    response.raise_for_status()
+    json_user_objects: list[dict[str, Any]] = []
 
-    return tuple(User.from_json(json_object=user_object) for user_object in response.json())
+    user_ids = [str(user_id) for user_id in user_ids] if user_ids is not None else []
+    screen_names = list(screen_names) if screen_names else []
+
+    user_ids_index = 0
+    screen_names_index = 0
+
+    # TODO: It would be cool to use `asyncio.gather` here...
+
+    while True:
+        iter_user_ids = user_ids[user_ids_index:user_ids_index+100]
+        user_ids_index += 100
+
+        num_slots_remaining = 100 - len(iter_user_ids)
+
+        iter_screen_names = screen_names[screen_names_index:screen_names_index+num_slots_remaining]
+        screen_names_index += num_slots_remaining
+
+        if not iter_user_ids and not iter_screen_names:
+            break
+
+        response = await http_client.get(
+            url=urljoin(TWITTER_API_URL, 'users/lookup.json'),
+            params={
+                key: value
+                for key, value in [
+                    ('user_id', ','.join(iter_user_ids) if iter_user_ids else None),
+                    ('screen_name', ','.join(iter_screen_names) if iter_screen_names else None),
+                    ('include_entities', include_entities),
+                    ('tweet_mode', tweet_mode)
+                ]
+                if value is not None
+            }
+        )
+        response.raise_for_status()
+
+        json_user_objects.extend(response.json())
+
+    return tuple(User.from_json(json_object=user_object) for user_object in json_user_objects)
 
 
 async def get_friend_ids(
