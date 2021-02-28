@@ -1,9 +1,8 @@
-from typing import Optional, Set, Iterable, Tuple, Dict, List, Union
+from typing import Optional, Iterable, Union
 from urllib.parse import urljoin, quote, parse_qs, urlparse, urlencode
 
 from httpx import AsyncClient as HTTPXAsyncClient
 from httpx_oauth.v1 import RequestTokenResponse
-from pyutils.my_http import HTTPStatusError
 
 from twitter_api.structures import IdsResult, User, AccessTokenResponse
 
@@ -18,10 +17,9 @@ async def request_oauth_token(http_client: HTTPXAsyncClient) -> RequestTokenResp
 
     response = await http_client.post(url=urljoin(TWITTER_BASE_URL, 'oauth/request_token'))
 
-    if response.is_error:
-        raise HTTPStatusError.from_status_code(status_code=response.status_code, response=response)
+    response.raise_for_status()
 
-    query_parameters_dict: Dict[str, List[str]] = parse_qs(response.text)
+    query_parameters_dict: dict[str, list[str]] = parse_qs(response.text)
 
     return RequestTokenResponse(
         oauth_token=query_parameters_dict['oauth_token'][0],
@@ -41,10 +39,13 @@ async def get_access_token(
     oauth_consumer_key: str,
     request_token: str,
     oauth_verifier: str
-):
+) -> AccessTokenResponse:
     """
+    Obtain an OAuth access token from an OAuth request token.
 
-    :param http_client:
+    https://developer.twitter.com/en/docs/authentication/api-reference/access_token
+
+    :param http_client: An HTTP client with which to retrieve the access token.
     :param oauth_consumer_key:
     :param request_token:
     :param oauth_verifier:
@@ -59,11 +60,9 @@ async def get_access_token(
             oauth_verifier=oauth_verifier
         )
     )
+    response.raise_for_status()
 
-    if response.is_error:
-        raise HTTPStatusError.from_status_code(status_code=response.status_code, response=response)
-
-    query_parameters_dict: Dict[str, List[str]] = parse_qs(response.text)
+    query_parameters_dict: dict[str, list[str]] = parse_qs(response.text)
 
     return AccessTokenResponse(
         oauth_token=query_parameters_dict['oauth_token'][0],
@@ -89,9 +88,7 @@ async def update_status(http_client: HTTPXAsyncClient, status: str):
         url=urljoin(TWITTER_API_URL, 'statuses/update.json'),
         data={'status': status}
     )
-
-    if response.is_error:
-        raise HTTPStatusError.from_status_code(status_code=response.status_code, response=response)
+    response.raise_for_status()
 
     # TODO: Fix response.
 
@@ -102,7 +99,7 @@ async def search_users(
     page: Optional[int] = None,
     count: Optional[int] = None,
     include_entities: Optional[bool] = None,
-) -> Tuple[User, ...]:
+) -> tuple[User, ...]:
     """
     Retrieve user information of users matching a search query.
 
@@ -131,9 +128,7 @@ async def search_users(
             if value is not None
         }
     )
-
-    if response.is_error:
-        raise HTTPStatusError.from_status_code(status_code=response.status_code, response=response)
+    response.raise_for_status()
 
     return tuple(User.from_json(json_object=user_object) for user_object in response.json())
 
@@ -168,9 +163,7 @@ async def show_user(
             if value is not None
         }
     )
-
-    if response.is_error:
-        raise HTTPStatusError.from_status_code(status_code=response.status_code, response=response)
+    response.raise_for_status()
 
     return User.from_json(json_object=response.json())
 
@@ -181,7 +174,7 @@ async def lookup_users(
     screen_names: Iterable[str] = None,
     include_entities: Optional[bool] = None,
     tweet_mode: Optional[bool] = None
-) -> Tuple[User, ...]:
+) -> tuple[User, ...]:
     """
     Retrieve user information about specified users.
 
@@ -208,9 +201,7 @@ async def lookup_users(
             if value is not None
         }
     )
-
-    if response.is_error:
-        raise HTTPStatusError.from_status_code(status_code=response.status_code, response=response)
+    response.raise_for_status()
 
     return tuple(User.from_json(json_object=user_object) for user_object in response.json())
 
@@ -223,7 +214,7 @@ async def get_friend_ids(
     stringify_ids: Optional[bool] = None,
     count: Optional[int] = None,
     follow_cursor: bool = False
-) -> Set[int]:
+) -> set[int]:
     """
     Retrieve the user IDs of the users a specified user is following.
 
@@ -253,9 +244,7 @@ async def get_friend_ids(
             if value is not None
         }
     )
-
-    if response.is_error:
-        raise HTTPStatusError.from_status_code(status_code=response.status_code, response=response)
+    response.raise_for_status()
 
     ids_result = IdsResult.from_json(json_object=response.json())
 
@@ -283,7 +272,7 @@ async def get_follower_ids(
     stringify_ids: Optional[bool] = None,
     count: Optional[int] = None,
     follow_cursor: bool = False
-) -> Set[int]:
+) -> set[int]:
     """
     Retrieve the user IDs of followers of a specified user.
 
@@ -313,9 +302,7 @@ async def get_follower_ids(
             if value is not None
         }
     )
-
-    if response.is_error:
-        raise HTTPStatusError.from_status_code(status_code=response.status_code, response=response)
+    response.raise_for_status()
 
     ids_result = IdsResult.from_json(json_object=response.json())
 
