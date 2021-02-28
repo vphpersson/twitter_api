@@ -5,7 +5,7 @@ setup(
     packages=find_packages(),
     install_requires=[
         'httpx',
-        'httpx-oauth @ https://github.com/vphpersson/httpx_oauth/tarball/master',
-        'pyutils @ https://github.com/vphpersson/pyutils/tarball/master'
+        'httpx_oauth @ git+ssh://git@github.com/vphpersson/httpx_oauth.git#egg=httpx_oauth',
+        'pyutils @ git+ssh://git@github.com/vphpersson/pyutils.git#egg=pyutils'
     ]
 )
