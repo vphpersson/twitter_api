@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import List, Optional, Any
+from typing import Optional, Any
 
 from pyutils.my_dataclasses import JsonDataclass
 
@@ -14,7 +14,7 @@ class AccessTokenResponse(JsonDataclass):
 
 @dataclass
 class IdsResult(JsonDataclass):
-    ids: List[int]
+    ids: list[int]
     next_cursor: int
     next_cursor_str: str
     previous_cursor: int
@@ -27,17 +27,17 @@ class Url(JsonDataclass):
     url: str
     expanded_url: str
     display_url: str
-    indices: List[int]
+    indices: list[int]
 
 
 @dataclass
 class UserUrl(JsonDataclass):
-    urls: List[Url]
+    urls: list[Url]
 
 
 @dataclass
 class Description(JsonDataclass):
-    urls: List[Url]
+    urls: list[Url]
 
 
 @dataclass
@@ -48,10 +48,10 @@ class UserEntities(JsonDataclass):
 
 @dataclass
 class StatusEntities(JsonDataclass):
-    hashtags: List[Any]
-    symbols: List[Any]
-    user_mentions: List[Any]
-    urls: List[Any]
+    hashtags: list[Any]
+    symbols: list[Any]
+    user_mentions: list[Any]
+    urls: list[Any]
 
 
 @dataclass

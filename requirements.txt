@@ -1,0 +1,3 @@
+httpx
+-e git+ssh://git@github.com/vphpersson/httpx_oauth.git#egg=httpx_oauth
+-e git+ssh://git@github.com/vphpersson/pyutils.git#egg=pyutils
