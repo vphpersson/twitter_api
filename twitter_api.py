@@ -7,10 +7,8 @@ from dataclasses import asdict
 from sys import stderr
 
 from httpx import AsyncClient as HTTPXAsyncClient, HTTPStatusError
-
 from httpx_oauth.v1 import OAuthAuth
 from twitter_api.calls import get_friend_ids, get_follower_ids, lookup_users, show_user
-
 from pyutils.argparse.typed_argument_parser import TypedArgumentParser
 
 
@@ -61,64 +59,71 @@ class TwitterApiArgumentParser(TypedArgumentParser):
         )
 
 
-async def main():
+async def twitter_api(
+    http_client: HTTPXAsyncClient,
+    action: str,
+    user_id: Optional[str],
+    screen_name: Optional[str]
+) -> None:
+    if action == 'user':
+        print(
+            json_dumps(
+                asdict(
+                    await show_user(
+                        http_client=http_client,
+                        user_id=user_id,
+                        screen_name=screen_name
+                    )
+                ),
+                indent=4
+            )
+        )
+    elif action == 'followers':
+        print(
+            '\n'.join(
+                user.screen_name
+                for user in await lookup_users(
+                    http_client=http_client,
+                    user_ids=await get_follower_ids(
+                        http_client=http_client,
+                        user_id=user_id,
+                        screen_name=screen_name,
+                        follow_cursor=True
+                    )
+                )
+            )
+        )
+    elif action == 'following':
+        print(
+            '\n'.join(
+                user.screen_name
+                for user in await lookup_users(
+                    http_client=http_client,
+                    user_ids=await get_friend_ids(
+                        http_client=http_client,
+                        user_id=user_id,
+                        screen_name=screen_name,
+                        follow_cursor=True
+                    )
+                )
+            )
+        )
 
+
+async def main():
     args: Type[TwitterApiArgumentParser.Namespace] = TwitterApiArgumentParser().parse_args()
 
-    auth = OAuthAuth(consumer_key=args.consumer_key, consumer_secret=args.consumer_secret)
-    async with HTTPXAsyncClient(auth=auth) as http_client:
-        if args.action == 'user':
-            try:
-                print(
-                    json_dumps(
-                        asdict(
-                            await show_user(
-                                http_client=http_client,
-                                user_id=args.user_id,
-                                screen_name=args.screen_name
-                            )
-                        ),
-                        indent=4
-                    )
-                )
-            except HTTPStatusError as e:
-                print(e, file=stderr)
-        elif args.action == 'followers':
-            try:
-                print(
-                    '\n'.join(
-                        user.screen_name
-                        for user in await lookup_users(
-                            http_client=http_client,
-                            user_ids=await get_follower_ids(
-                                http_client=http_client,
-                                user_id=args.user_id,
-                                screen_name=args.screen_name,
-                                follow_cursor=True
-                            )
-                        )
-                    )
-                )
-            except HTTPStatusError as e:
-                print(e, file=stderr)
-        elif args.action == 'following':
-            try:
-                print(
-                    '\n'.join(
-                        user.screen_name
-                        for user in await lookup_users(
-                            http_client=http_client,
-                            user_ids=await get_friend_ids(
-                                http_client=http_client,
-                                user_id=args.user_id,
-                                screen_name=args.screen_name,
-                                follow_cursor=True
-                            )
-                        )
-                    )
-                )
-            except HTTPStatusError as e:
-                print(e, file=stderr)
+    try:
+        auth = OAuthAuth(consumer_key=args.consumer_key, consumer_secret=args.consumer_secret)
+        async with HTTPXAsyncClient(auth=auth) as http_client:
+            await twitter_api(
+                http_client=http_client,
+                action=args.action,
+                user_id=args.user_id,
+                screen_name=args.screen_name
+            )
+    except HTTPStatusError as e:
+        print(e, file=stderr)
 
 
 if __name__ == '__main__':
