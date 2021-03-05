@@ -238,7 +238,7 @@ async def get_friend_ids(
     stringify_ids: Optional[bool] = None,
     count: Optional[int] = None,
     follow_cursor: bool = False
-) -> set[int]:
+) -> list[int]:
     """
     Retrieve the user IDs of the users a specified user is following.
 
@@ -273,7 +273,7 @@ async def get_friend_ids(
     ids_result = IdsResult.from_json(json_object=response.json())
 
     if follow_cursor and ids_result.next_cursor != 0:
-        return set(ids_result.ids).union(
+        ids_result.ids.extend(
             await get_friend_ids(
                 http_client=http_client,
                 user_id=user_id,
@@ -285,7 +285,7 @@ async def get_friend_ids(
             )
         )
 
-    return set(ids_result.ids)
+    return ids_result.ids
 
 
 async def get_follower_ids(
@@ -296,7 +296,7 @@ async def get_follower_ids(
     stringify_ids: Optional[bool] = None,
     count: Optional[int] = None,
     follow_cursor: bool = False
-) -> set[int]:
+) -> list[int]:
     """
     Retrieve the user IDs of followers of a specified user.
 
@@ -331,7 +331,7 @@ async def get_follower_ids(
     ids_result = IdsResult.from_json(json_object=response.json())
 
     if follow_cursor and ids_result.next_cursor != 0:
-        return set(ids_result.ids).union(
+        return ids_result.ids.extend(
             await get_follower_ids(
                 http_client=http_client,
                 user_id=user_id,
@@ -343,4 +343,4 @@ async def get_follower_ids(
             )
         )
 
-    return set(ids_result.ids)
+    return ids_result.ids
