@@ -331,7 +331,7 @@ async def get_follower_ids(
     ids_result = IdsResult.from_json(json_object=response.json())
 
     if follow_cursor and ids_result.next_cursor != 0:
-        return ids_result.ids.extend(
+        ids_result.ids.extend(
             await get_follower_ids(
                 http_client=http_client,
                 user_id=user_id,
