@@ -1,12 +1,17 @@
 from typing import Optional
 from json import dumps as json_dumps
 from dataclasses import asdict
+from enum import Enum
 
 from httpx import AsyncClient as HTTPXAsyncClient
 from twitter_api.calls import get_friend_ids, get_follower_ids, lookup_users, show_user
 from pyutils.argparse.typed_argument_parser import TypedArgumentParser
 
-# TODO: Add action enum?
+
+class TwitterApiAction(Enum):
+    USER = 'user'
+    FOLLOWERS = 'followers'
+    FOLLOWING = 'following'
 
 
 class TwitterApiArgumentParser(TypedArgumentParser):
@@ -42,7 +47,7 @@ class TwitterApiArgumentParser(TypedArgumentParser):
         self.add_argument(
             'action',
             help='The Twitter API action to perform.',
-            choices=['user', 'followers', 'following']
+            choices=[member.value for member in TwitterApiAction]
         )
 
         user_group = self.add_mutually_exclusive_group(required=True)
