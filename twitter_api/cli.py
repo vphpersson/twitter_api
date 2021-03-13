@@ -4,7 +4,7 @@ from dataclasses import asdict
 from enum import Enum
 
 from httpx import AsyncClient as HTTPXAsyncClient
-from twitter_api.calls import get_friend_ids, get_follower_ids, lookup_users, show_user
+from twitter_api.calls import get_friend_ids, get_follower_ids, lookup_users, show_user, create_friendship
 from pyutils.argparse.typed_argument_parser import TypedArgumentParser
 
 
@@ -12,6 +12,7 @@ class TwitterApiAction(Enum):
     USER = 'user'
     FOLLOWERS = 'followers'
     FOLLOWING = 'following'
+    FOLLOW = 'follow'
 
 
 class TwitterApiArgumentParser(TypedArgumentParser):
@@ -66,47 +67,47 @@ async def twitter_api(
     action: str,
     user_id: Optional[str],
     screen_name: Optional[str]
-) -> None:
+) -> Optional[str]:
     if action == 'user':
-        print(
-            json_dumps(
-                asdict(
-                    await show_user(
-                        http_client=http_client,
-                        user_id=user_id,
-                        screen_name=screen_name
-                    )
-                ),
-                indent=4
-            )
+        return json_dumps(
+            asdict(
+                await show_user(
+                    http_client=http_client,
+                    user_id=user_id,
+                    screen_name=screen_name
+                )
+            ),
+            indent=4
         )
     elif action == 'followers':
-        print(
-            '\n'.join(
-                user.screen_name
-                for user in await lookup_users(
+        return '\n'.join(
+            user.screen_name
+            for user in await lookup_users(
+                http_client=http_client,
+                user_ids=await get_follower_ids(
                     http_client=http_client,
-                    user_ids=await get_follower_ids(
-                        http_client=http_client,
-                        user_id=user_id,
-                        screen_name=screen_name,
-                        follow_cursor=True
-                    )
+                    user_id=user_id,
+                    screen_name=screen_name,
+                    follow_cursor=True
                 )
             )
         )
     elif action == 'following':
-        print(
-            '\n'.join(
-                user.screen_name
-                for user in await lookup_users(
+        return '\n'.join(
+            user.screen_name
+            for user in await lookup_users(
+                http_client=http_client,
+                user_ids=await get_friend_ids(
                     http_client=http_client,
-                    user_ids=await get_friend_ids(
-                        http_client=http_client,
-                        user_id=user_id,
-                        screen_name=screen_name,
-                        follow_cursor=True
-                    )
+                    user_id=user_id,
+                    screen_name=screen_name,
+                    follow_cursor=True
                 )
             )
+        )
+    elif action == 'follow':
+        await create_friendship(
+            http_client=http_client,
+            user_id=user_id,
+            screen_name=screen_name
         )
