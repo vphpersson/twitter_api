@@ -344,3 +344,38 @@ async def get_follower_ids(
         )
 
     return ids_result.ids
+
+
+async def create_friendship(
+    http_client: HTTPXAsyncClient,
+    user_id: Optional[int] = None,
+    screen_name: Optional[str] = None,
+    follow: bool = False
+) -> User:
+    """
+    Follow a user.
+
+    https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/follow-search-get-users/api-reference/post-friendships-create
+
+    :param http_client: The HTTP client with which to perform the request.
+    :param user_id: The user id of the user to follow.
+    :param screen_name: The screen name of the user to follow.
+    :param follow: Whether to enable notifications for the target user.
+    :return: The followed user.
+    """
+
+    response = await http_client.post(
+        url=urljoin(TWITTER_API_URL, 'friendships/create.json'),
+        params={
+            key: value
+            for key, value in [
+                ('user_id', user_id),
+                ('screen_name', screen_name),
+                ('follow', 'true' if follow else None)
+            ]
+            if value is not None
+        }
+    )
+    response.raise_for_status()
+
+    return User.from_json(json_object=response.json())
