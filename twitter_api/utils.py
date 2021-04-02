@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Union
 from dataclasses import asdict
 from json import loads as json_loads, dumps as json_dumps
 from pathlib import Path
@@ -9,10 +9,10 @@ from twitter_api.calls import request_oauth_token, make_authorize_url, get_acces
 from twitter_api.structures import AccessTokenResponse
 
 
-def set_auth_tokens(
+async def set_auth_tokens(
     http_client: HTTPXAsyncClient,
     consumer_key: Optional[str] = None,
-    tokens_path: Optional[Path] = None
+    tokens_path: Optional[Union[Path, str]] = None
 ) -> None:
     """
     Obtain OAuth access tokens from a file or an HTTP endpoint and update the provided HTTP client auth handler.
@@ -26,6 +26,9 @@ def set_auth_tokens(
     :param tokens_path: The path where the OAuth tokens are to be read from or stored.
     :return: None
     """
+
+    if tokens_path is not None:
+        tokens_path = Path(tokens_path)
 
     try:
         access_token_response = AccessTokenResponse.from_json(
