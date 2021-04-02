@@ -33,7 +33,10 @@ async def main():
             if str_result:
                 print(str_result)
     except HTTPStatusError as e:
-        print(e, file=stderr)
+        print(
+            '\n'.join(str(e).split('\n')[:-1]) + '\n' + e.response.text,
+            file=stderr
+        )
 
 
 if __name__ == '__main__':

@@ -4,7 +4,7 @@ from urllib.parse import urljoin, quote, parse_qs, urlparse, urlencode
 from httpx import AsyncClient as HTTPXAsyncClient
 from httpx_oauth.v1 import RequestTokenResponse
 
-from twitter_api.structures import IdsResult, User, AccessTokenResponse
+from twitter_api.structures import IdsResult, User, AccessTokenResponse, Status
 
 user_info_url = 'https://api.twitter.com/1.1/account/verify_credentials.json'
 
@@ -353,7 +353,7 @@ async def create_friendship(
     follow: bool = False
 ) -> User:
     """
-    Follow a user.
+    Create a friendship with a user (i.e. follow a user).
 
     https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/follow-search-get-users/api-reference/post-friendships-create
 
@@ -379,3 +379,53 @@ async def create_friendship(
     response.raise_for_status()
 
     return User.from_json(json_object=response.json())
+
+
+async def user_timeline_statuses(
+    http_client: HTTPXAsyncClient,
+    user_id: Optional[int] = None,
+    screen_name: Optional[str] = None,
+    since_id: Optional[int] = None,
+    count: Optional[int] = None,
+    max_id: Optional[int] = None,
+    trim_user: Optional[bool] = None,
+    exclude_replies: Optional[bool] = None,
+    include_rts: Optional[bool] = None
+) -> tuple[Status, ...]:
+    """
+    Retrieve statuses (i.e. tweets) of a user.
+
+    https://developer.twitter.com/en/docs/twitter-api/v1/tweets/timelines/api-reference/get-statuses-user_timeline
+
+    :param http_client: The HTTP client with which to perform the request.
+    :param user_id: The user id of the user whose statuses to retrieve.
+    :param screen_name: The screen name of the user whose statuses to retrieve.
+    :param since_id: The minimum non-inclusive id of the statuses to return.
+    :param count: The maximum number of statuses to retrieve.
+    :param max_id: The maximum id of the statuses to return.
+    :param trim_user: Whether to trim the user object included in the statuses.
+    :param exclude_replies: Whether to exclude replies.
+    :param include_rts: Whether to include retweets.
+    :return: Statuses matching the criteria.
+    """
+
+    response = await http_client.get(
+        url=urljoin(TWITTER_API_URL, 'statuses/user_timeline.json'),
+        params={
+            key: value
+            for key, value in [
+                ('user_id', user_id),
+                ('screen_name', screen_name),
+                ('since_id', since_id),
+                ('count', count),
+                ('max_id', max_id),
+                ('trim_user', 'true' if trim_user else None),
+                ('exclude_replies', 'true' if exclude_replies else None),
+                ('include_rts', 'true' if include_rts else None)
+            ]
+            if value is not None
+        }
+    )
+    response.raise_for_status()
+
+    return tuple(Status.from_json(json_object=user_dict) for user_dict in response.json())
