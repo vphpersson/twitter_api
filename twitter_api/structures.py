@@ -128,3 +128,4 @@ class User(JsonDataclass):
     profile_location: Optional[str] = None
     suspended: Optional[bool] = None
     needs_phone_verification: Optional[bool] = None
+    muting: Optional[bool] = None

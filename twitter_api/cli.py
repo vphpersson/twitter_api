@@ -21,6 +21,7 @@ class TwitterApiArgumentParser(TypedArgumentParser):
         consumer_key: str
         consumer_secret: str
         action: str
+        access_tokens_path: Optional[str]
         user_id: Optional[str]
         screen_name: Optional[str]
 
@@ -59,6 +60,11 @@ class TwitterApiArgumentParser(TypedArgumentParser):
         user_group.add_argument(
             '--screen-name',
             help='A screen name of a user to examine.'
+        )
+
+        self.add_argument(
+            '--access-tokens-path',
+            help='The path of a file storing access tokens.',
         )
 
 
