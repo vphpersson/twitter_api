@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from dataclasses import dataclass
 from typing import Optional, Any
 
@@ -78,6 +80,7 @@ class Status(JsonDataclass):
     favorited: bool
     retweeted: bool
     lang: str
+    user: Optional[User]
 
 
 @dataclass
