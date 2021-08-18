@@ -4,7 +4,7 @@ from dataclasses import asdict
 from enum import Enum
 
 from httpx import AsyncClient as HTTPXAsyncClient
-from twitter_api.calls import get_friend_ids, get_follower_ids, lookup_users, show_user, create_friendship
+from twitter_api.calls import get_friend_ids, get_follower_ids, lookup_users, show_user, create_friendship, search_tweets, user_timeline_statuses
 from pyutils.argparse.typed_argument_parser import TypedArgumentParser
 
 
@@ -13,6 +13,7 @@ class TwitterApiAction(Enum):
     FOLLOWERS = 'followers'
     FOLLOWING = 'following'
     FOLLOW = 'follow'
+    SEARCH = 'search'
 
 
 class TwitterApiArgumentParser(TypedArgumentParser):
@@ -117,3 +118,51 @@ async def twitter_api(
             user_id=user_id,
             screen_name=screen_name
         )
+    elif action == 'search':
+        r = await user_timeline_statuses(
+            http_client=http_client,
+            screen_name='CBildt',
+            count=200,
+            tweet_mode='extended'
+        )
+
+        from datetime import datetime, timezone
+        from pathlib import Path
+        from json import dumps
+
+        entries = []
+        for status in r:
+
+            if status.in_reply_to_status_id:
+                quote_post = dict(
+                    id=status.in_reply_to_status_id_str,
+                    author=dict(
+                        name=status.in_reply_to_screen_name,
+                        id=status.in_reply_to_user_id_str,
+                    ),
+                )
+            else:
+                quote_post = None
+
+
+            entries.append(
+                dict(
+                    id=status.id_str,
+                    datetime=datetime.strptime(status.created_at, '%a %b %d %H:%M:%S +0000 %Y').replace(tzinfo=timezone.utc).isoformat(),
+                    url=f'https://twitter.com/{status.user.screen_name}/status/{status.id}',
+                    forum=dict(
+                        name='Twitter'
+                    ),
+                    author=dict(
+                        id=status.user.id_str,
+                        name=status.user.screen_name
+                    ),
+                    quoted_post=quote_post,
+                    text=status.full_text,
+                    mentioned_users=[
+                        user_mention.screen_name for user_mention in status.entities.user_mentions
+                    ]
+                )
+            )
+
+        Path('/tmp/entries.json').write_text(dumps(entries))
