@@ -52,8 +52,9 @@ class UserEntities(JsonDataclass):
 class StatusEntities(JsonDataclass):
     hashtags: list[Any]
     symbols: list[Any]
-    user_mentions: list[Any]
+    user_mentions: list[UserMention]
     urls: list[Any]
+    media: Optional[list[Media]] = None
 
 
 @dataclass
@@ -61,7 +62,6 @@ class Status(JsonDataclass):
     created_at: str
     id: int
     id_str: str
-    text: str
     truncated: bool
     entities: StatusEntities
     source: str
@@ -81,6 +81,16 @@ class Status(JsonDataclass):
     retweeted: bool
     lang: str
     user: Optional[User]
+    possibly_sensitive: Optional[bool] = None
+    retweeted_status: Optional[Status] = None
+    quoted_status_id: Optional[int] = None
+    quoted_status_id_str: Optional[str] = None
+    quoted_status: Optional[Status] = None
+    extended_entities: Optional[ExtendedEntities] = None
+    text: Optional[str] = None
+    full_text: Optional[str] = None
+    display_text_range: Optional[list[int]] = None
+    quoted_status_permalink: Optional[str] = None
 
 
 @dataclass
@@ -132,3 +142,65 @@ class User(JsonDataclass):
     suspended: Optional[bool] = None
     needs_phone_verification: Optional[bool] = None
     muting: Optional[bool] = None
+    withheld_in_countries: Optional[list[Any]] = None
+
+
+@dataclass
+class SearchMetadata(JsonDataclass):
+    completed_in: float
+    max_id: int
+    mad_id_str: str
+    next_results: str
+    query: str
+    count: int
+    since_id: int
+    since_id_str: str
+
+
+@dataclass
+class SearchTweetsResponse(JsonDataclass):
+    statuses: list[Status]
+    search_metadata: SearchMetadata
+
+
+@dataclass
+class MediaSizeSpecifier(JsonDataclass):
+    w: str
+    h: str
+    resize: str
+
+
+@dataclass
+class MediaSize(JsonDataclass):
+    thumb: MediaSizeSpecifier
+    media: MediaSizeSpecifier
+    large: MediaSizeSpecifier
+    small: MediaSizeSpecifier
+
+
+@dataclass
+class Media(JsonDataclass):
+    id: int
+    id_str: str
+    indices: list[int]
+    media_url: str
+    media_url_https: str
+    url: str
+    display_url: str
+    expanded_url: str
+    type: str
+    sizes: MediaSize
+
+
+@dataclass
+class ExtendedEntities:
+    media: list[Media]
+
+
+@dataclass
+class UserMention(JsonDataclass):
+    screen_name: str
+    name: str
+    id: int
+    id_str: str
+    indices: list[int]

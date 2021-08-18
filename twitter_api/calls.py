@@ -4,7 +4,7 @@ from urllib.parse import urljoin, quote, parse_qs, urlparse, urlencode
 from httpx import AsyncClient as HTTPXAsyncClient
 from httpx_oauth.v1 import RequestTokenResponse
 
-from twitter_api.structures import IdsResult, User, AccessTokenResponse, Status
+from twitter_api.structures import IdsResult, User, AccessTokenResponse, Status, SearchTweetsResponse
 
 user_info_url = 'https://api.twitter.com/1.1/account/verify_credentials.json'
 
@@ -173,6 +173,7 @@ async def lookup_users(
     user_ids: Iterable[Union[int, str]] = None,
     screen_names: Iterable[str] = None,
     include_entities: Optional[bool] = None,
+    # NOTE: Undocumented (!) - When set to "extended", the full text a of a tweet is returned.
     tweet_mode: Optional[bool] = None
 ) -> tuple[User, ...]:
     """
@@ -390,7 +391,8 @@ async def user_timeline_statuses(
     max_id: Optional[int] = None,
     trim_user: Optional[bool] = None,
     exclude_replies: Optional[bool] = None,
-    include_rts: Optional[bool] = None
+    include_rts: Optional[bool] = None,
+    tweet_mode: Optional[str] = None
 ) -> tuple[Status, ...]:
     """
     Retrieve statuses (i.e. tweets) of a user.
@@ -421,11 +423,68 @@ async def user_timeline_statuses(
                 ('max_id', max_id),
                 ('trim_user', 'true' if trim_user else None),
                 ('exclude_replies', 'true' if exclude_replies else None),
-                ('include_rts', 'true' if include_rts else None)
+                ('include_rts', 'true' if include_rts else None),
+                ('tweet_mode', tweet_mode)
             ]
             if value is not None
         }
     )
     response.raise_for_status()
 
-    return tuple(Status.from_json(json_object=user_dict) for user_dict in response.json())
+    return tuple(Status.from_json(json_object=status_dict) for status_dict in response.json())
+
+
+async def search_tweets(
+    http_client: HTTPXAsyncClient,
+    q: str,
+    geocode: Optional[str] = None,
+    lang: Optional[str] = None,
+    locale: Optional[str] = None,
+    result_type: ... = None,
+    count: Optional[int] = None,
+    until: Optional[str] = None,
+    since_id: Optional[str] = None,
+    max_id: Optional[str] = None,
+    include_entities: Optional[bool] = None
+) -> SearchTweetsResponse:
+    """
+    Search Tweets.
+
+    https://developer.twitter.com/en/docs/twitter-api/v1/tweets/search/api-reference/get-search-tweets
+
+    :param http_client: The HTTP client with which to perform the request.
+    :param q:
+    :param geocode:
+    :param lang:
+    :param locale:
+    :param result_type:
+    :param count:
+    :param until:
+    :param since_id:
+    :param max_id:
+    :param include_entities:
+    :return:
+    """
+
+    response = await http_client.get(
+        url=urljoin(TWITTER_API_URL, 'search/tweets.json'),
+        params={
+            key: value
+            for key, value in [
+                ('q', q),
+                ('geocode', geocode),
+                ('lang', lang),
+                ('locale', locale),
+                ('result_type', result_type),
+                ('count', count),
+                ('until', until),
+                ('since_id', since_id),
+                ('max_id', max_id),
+                ('include_entities', 'true' if include_entities else None)
+            ]
+            if value is not None
+        }
+    )
+    response.raise_for_status()
+
+    return SearchTweetsResponse.from_json(json_object=response.json())
