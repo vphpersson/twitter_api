@@ -387,12 +387,12 @@ async def user_timeline_statuses(
     user_id: Optional[int] = None,
     screen_name: Optional[str] = None,
     since_id: Optional[int] = None,
-    count: Optional[int] = None,
+    count: Optional[int] = 200,
     max_id: Optional[int] = None,
     trim_user: Optional[bool] = None,
     exclude_replies: Optional[bool] = None,
     include_rts: Optional[bool] = None,
-    tweet_mode: Optional[str] = None
+    tweet_mode: Optional[str] = 'extended'
 ) -> tuple[Status, ...]:
     """
     Retrieve statuses (i.e. tweets) of a user.
@@ -408,6 +408,7 @@ async def user_timeline_statuses(
     :param trim_user: Whether to trim the user object included in the statuses.
     :param exclude_replies: Whether to exclude replies.
     :param include_rts: Whether to include retweets.
+    :param tweet_mode:
     :return: Statuses matching the criteria.
     """
 
